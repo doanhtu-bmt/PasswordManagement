@@ -5,35 +5,28 @@ Created on Aug 21, 2018
 '''
 import re
 import hashlib
-import os, json
+import os
 # import getpass
 
 class PasswordManager():
     '''
     Provide the password management methods
     '''
-    STORAGE_FILEPATH = "password.txt"
     PASSWORD_PATTERN_CHECKS =   [
-                                    ['\d', 'password must contains a digit'],
-                                    ['[A-Z]', 'password must contains an upper-case character'],
-                                    ['[a-z]', 'password must contains a lower-case character'],
-                                    ['\W', 'password must contains a symbol'],
-                                    ['^(?!.* ).*$', 'password must not contains any white space'],
-                                    ['^.{6,}$', 'password minimum length is 6']
+                                    ['\d', 'does not contain a digit'],
+                                    ['[A-Z]', 'does not contain a upper-case character'],
+                                    ['[a-z]', 'does not a lower-case character'],
+                                    ['\W', 'does not contains a symbol'],
+                                    ['^(?!.* ).*$', 'does not contains any white space'],
+                                    ['^.{6,}$', 'minimum length was not 6']
                                 ]
 
-    def __init__(self):
+    def __init__(self, username=None, encrypted_password=None):
         '''
         Constructor
         '''
-        # load user name and password from file
-        if os.path.exists(PasswordManager.STORAGE_FILEPATH):
-            username, encrypted_password = self.loadUserInfoFromFile()
-            self.__username = username
-            self.__encrypted_password = encrypted_password
-        else:
-            self.__username = None
-            self.__encrypted_password = None
+        self.__username = username
+        self.__encrypted_password = encrypted_password
         
     def _encrypt(self, plain_text):
         '''
@@ -66,21 +59,24 @@ class PasswordManager():
         
         return False
     
-    def login(self, username, plaintext_password):
+    def encryptPassword(self, plain_text_password):
         '''
-        Login method, check user name an password if match, return true
-        Else returns false
+        This method takes a password (string) and returns the encrypted form of the password
         '''
-        result =    self._verifyUsername(username=username) \
-                    and self._verifyPassword(plaintext_password=plaintext_password)
-                    
-        if result:
-            print("Login successfully!")
-            return True
-        else:
-            print("Login failed!")
-            return False 
+        return self._encrypt(plain_text=plain_text_password)
     
+    def showPasswordRules(self):
+        password_rules =  '''
+            |-------------------------------------------------------------------------------------------|
+            |    Password rules:                                                                        |
+            |    - The password must not contain any whitespace                                         |
+            |    - The password must be at least 6 characters long.                                     |
+            |    - The password must contain at least one uppercase and at least one lowercase letter.  |
+            |    - The password must have at least one digit and symbol.                                |
+            |-------------------------------------------------------------------------------------------|
+        '''
+        print(password_rules)
+        
     def validatePassword(self, plaintext_password):
         '''
         This method takes a string (a password) and returns true if it meets the following criteria
@@ -92,23 +88,28 @@ class PasswordManager():
         the program should display a message telling the user why the password is invalid,
         specifically. It should also continue to loop until the user enters a valid password.
         '''
-        
+        is_valid = True
+        error_message = '\tINVALID: your password:'
         for check in PasswordManager.PASSWORD_PATTERN_CHECKS:
             if not re.search(check[0], plaintext_password):
-                return check[1]
-        return True
+                error_message = '{0}{1}\t\t- {2}'.format(error_message, os.linesep, check[1])
+                is_valid = False
+        
+        if is_valid:
+            print("Password is valid!")
+            return True
+        else:
+            print(error_message)
+            return False
     
-    def setNewUserName(self, username):
+    def validateUsername(self, username):
         '''
         This method takes a string (a proposed user name)
-        if user name is not None, store it in the member variable and returns true.
+        if user name is not None, returns true.
         Otherwise returns false.
         '''
         if username:
-            self.__username = username
-            self.__encrypted_password = None
-            self.saveUserInfoToFile(self.__username, self.__encrypted_password)
-            print("User name saved!")
+            print("User name OK!")
             return True
         else:
             print("Invalid user name!")
@@ -123,28 +124,11 @@ class PasswordManager():
         validation_result = self.validatePassword(plaintext_password=plaintext_password)
         if validation_result == True:
             self.__encrypted_password = self._encrypt(plain_text=plaintext_password)
-            self.saveUserInfoToFile(self.__username, self.__encrypted_password)
-            print("Password saved!")
+            print("Password OK!")
             return True
         else:
             print("    Invalid password! %s." % validation_result)
             return False
 
-    def saveUserInfoToFile(self, username, encrypted_password):
-        f = open(PasswordManager.STORAGE_FILEPATH, 'w')
-        user_info = {
-                        'username' : username,
-                        'encrypted_password': encrypted_password
-                    }
-        str_user_info = json.dumps(user_info)
-        f.write(str_user_info)
-        f.close()
-    
-    def loadUserInfoFromFile(self):
-        f = open(PasswordManager.STORAGE_FILEPATH, 'r')
-        str_user_info = f.read()
-        f.close()
-        user_info = json.loads(str_user_info)
-        return (user_info['username'], user_info['encrypted_password'])
             
             
