@@ -1,7 +1,7 @@
 '''
 Created on Aug 20, 2018
 
-@author: Do Anh Tu
+@author: Do Anh Tu doanhtu@live.com
 '''
 from PasswordManager import PasswordManager
 import json, os
